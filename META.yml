@@ -1,12 +1,12 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Object-Variables
-version:      0.5
+version:      0.9
 version_from: lib/Object/Variables.pm
 installdirs:  site
 requires:
     Filter::Simple:                0.78
-    Lexical::Util:                 0.3
+    Lexical::Util:                 0.8
     Test::More:                    0.47
     Tie::IxHash:                   1.21
 

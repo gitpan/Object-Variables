@@ -1,6 +1,6 @@
 BEGIN {
     package X;
-    use Test::More tests => 26;
+    use Test::More tests => 25;
     use strict;
     use warnings;
     use Object::Variables qw(
@@ -12,7 +12,7 @@ BEGIN {
 
     sub set_testvars {
         my X $self = shift;
-        object vars;
+        use object vars;
 
         $scalar = 'one';
         @array = ( qw/two three/ );
@@ -28,7 +28,7 @@ BEGIN {
 
     sub examine_testvars {
         my X $self = shift;
-        object vars;
+        use object vars;
 
         ok( $scalar eq 'one' );
         ok( $array[0] eq 'two' && $array[1] eq 'three' );
@@ -45,7 +45,7 @@ BEGIN {
 
     sub examine_two {
         (my X $this) = @_;
-        object vars : $this ($scalar, @array, %hash);
+        use object vars : $this ($scalar, @array, %hash);
 
         ok( $scalar eq 'won' );
         ok( $array[0] eq 'two' && $array[1] eq 'three' );
@@ -58,7 +58,7 @@ BEGIN {
 
     sub nested_testvars {
         my $self = shift;
-        object vars : $self;
+        use object vars : $self;
 
         ok( $scalar eq 'won' );
         ok( $array[0] eq 'two' && $array[1] eq 'three' );
@@ -67,7 +67,7 @@ BEGIN {
 
     sub recursive_testvars {
         my $self = shift;
-        object vars;
+        use object vars;
         my ($level) = @_;
 
         ok( defined $scalar && $scalar eq 'won' );
@@ -78,8 +78,8 @@ BEGIN {
     }
 
     sub comments {
-##      object vars : $self;
-##      \object vars : $self;
+##      use object vars : $self;
+##      \use object vars : $self;
 
         my $text = '\field vars : my $self ($scalar);';
         ok(1);
@@ -87,7 +87,7 @@ BEGIN {
 
     sub fancy {
         my $self = shift;
-        object vars : $self (
+        use object vars : $self (
             $scalar, %hash, @array,
         );
 
@@ -98,15 +98,13 @@ BEGIN {
     
     sub nolist {
         my $self = shift;
-        object vars ();
+        use object vars ();
     }
     
     sub nolist2 {
         my $self = shift;
-        object vars : $self ();
+        use object vars : $self ();
     }
-
-    ok(__LINE__ == 110);
 }
 
 package main;

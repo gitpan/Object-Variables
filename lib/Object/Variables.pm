@@ -5,22 +5,26 @@
 ## This program is free software. It may be copied and/or redistributed under
 ## the same terms as Perl itself.
 ##==============================================================================
-## $Id: Variables.pm,v 0.5 2004/07/27 01:53:14 kevin Exp $
+## $Id: Variables.pm,v 0.9 2004/07/30 01:24:45 kevin Exp $
 ##==============================================================================
 require 5.006;
 
-package ## Don't actually want this indexed yet
-	Object::Variables;
+package Object::Variables;
 use strict;
 use warnings;
-our ($VERSION) = q$Revision: 0.5 $ =~ /^Revision:\s+(\S+)/ or $VERSION = "0.0";
+our ($VERSION) = q$Revision: 0.9 $ =~ /^Revision:\s+(\S+)/ or $VERSION = "0.0";
 use Filter::Simple;
-use Lexical::Util qw(frame_to_cvref lexalias);
+use Lexical::Util qw(frame_to_cvref lexical_alias);
 use Tie::IxHash;
+use Object::Variables::base;
 use base qw(Exporter);
 our @EXPORT_OK = qw(reference_to pedigree);
 no strict 'refs';
 
+##==============================================================================
+## If this flag is set to a non-zero value, the filtered text will be sent
+## to standard output during compilation.
+##==============================================================================
 our $DEBUG;
 
 ##==============================================================================
@@ -34,15 +38,6 @@ my %STRICTNESS;
 ## method. The hash is used to detect and combine duplicates.
 ##==============================================================================
 my (@BITMAPS, %BITMAPS);
-
-##==============================================================================
-## These are used to set suitable initial values for each instance variable.
-##==============================================================================
-my %initializers = (
-	'%' => sub { {} },
-	'@' => sub { [] },
-	'$' => sub { undef },
-);
 
 =pod
 
@@ -91,7 +86,7 @@ The new way:
 	sub new {
 	    my ($class) = @_;
 	    my $self = $class->SUPER::new;
-	    object vars : $self;
+	    use object vars : $self;
 	    $foo = 1;
 	    @bar = qw(foo bar);
 	    return $self;
@@ -99,7 +94,7 @@ The new way:
 
 	sub method1 {
 	    my ($self, $input) = @_;
-	    object vars;
+	    use object vars;
 
 	    $self->set_foo($input);
 	    $baz{$foo} = 'huh?';
@@ -191,7 +186,7 @@ is C<$self> (i.e., C<self:$self>), but C++ fans might want to use C<< self:$this
 You use the variables by including the following line at or near the beginning
 of each method:
 
-C<< S<< 	object vars : I<$self> (I<varlist>); >> >>
+C<< S<< 	use object vars : I<$self> (I<varlist>); >> >>
 
 where I<$self> is the variable holding the object reference, and I<varlist> is
 the list of variable names. You may omit the C<I<$self>> part, in which case
@@ -199,6 +194,9 @@ the object reference is taken to be I<$self> (unless you've used the
 L<self|"self:name"> directive). You may also omit the C<(I<varlist>)>
 part, in which case all instance variables are made available (but this
 generates a fatal error if the L<"strict:"> modifier was in the import list).
+
+(For backward compatibility with earlier versions of this module, you may leave
+off the word "use", but this is deprecated.)
 
 This directive has effect both at compile time and at runtime.
 
@@ -241,24 +239,6 @@ sets up initial values.
 
 The current implementation creates I<$object> as an array, but you should not
 depend on this.
-
-=cut
-
-##==============================================================================
-## new
-##==============================================================================
-sub new {
-	my $class = shift;
-	my $self = bless [], $class;
-
-	foreach my $type (split m//, ${"$class\::OBJECTVARTYPES"}) {
-		push @$self, $initializers{$type}->();
-	}
-
-	return $self;
-}
-
-=pod
 
 =back
 
@@ -354,11 +334,11 @@ output after it is filtered. You need to do this in a BEGIN block:
 
 =item *
 
-Because of the way source filters work, the C<object vars> directive will get
-replaced wherever it occurs. To prevent this from happening where you don't want
-it to happen (in a string or a comment, for example), just put a backslash in
-front of it, which will be removed.  If for some reason you want the string
-"\object vars", use two backslashes.
+Because of the way source filters work, the C<use object vars> directive will
+get replaced wherever it occurs. To prevent this from happening where you don't
+want it to happen (in a string or a comment, for example), just put a backslash
+in front of it, which will be removed.  If for some reason you actually want the
+string "\use object vars", use two backslashes.
 
 =item *
 
@@ -378,13 +358,16 @@ actually shouldn't arise much in practice.
 
 =back
 
-=head1 MODULES USED
+=head1 MODULES REQUIRED
 
-L<Lexical::Util|Lexical::Util> (version 0.3 or later)
+L<Tie::IxHash|Tie::IxHash>,
+L<Filter::Simple|Filter::Simple>,
+L<Lexical::Util|Lexical::Util> (version 0.8 or later)
 
-L<Tie::IxHash|Tie::IxHash>
+=head1 SEE ALSO
 
-L<Filter::Simple|Filter::Simple>
+L<Perl6::Binding|Perl6::Binding>, L<Lexical::Alias|Lexical::Alias>,
+L<fields|fields>
 
 =head1 COPYRIGHT AND LICENSE
 
@@ -395,7 +378,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Kevin Michael Vail <F<kevin>@F<vaildc>.F<net>>
+Kevin Michael Vail <F<kvail>@F<cpan>.F<org>>
 
 =cut
 
@@ -667,7 +650,7 @@ sub import {
 			]{$type}->($package, $name, $vars->{$varname});
 		}
 		if (vec($flags, FL_SET, 1)) {
-			$create_set_method{$type}->($package, $name, $vars->{$name});
+			$create_set_method{$type}->($package, $name, $vars->{$varname});
 		}
 	}
 
@@ -727,7 +710,7 @@ $filename($line_number): $_: no such variable in $package
 					next;
 				};
 				die <<"::";
-$filename($line_number): '$_': invalid item in 'object vars' list
+$filename($line_number): '$_': invalid item in 'use object vars' list
 ::
 			}
 		}
@@ -766,7 +749,7 @@ $filename($line_number): must list variables when 'strict:' is in effect
 FILTER {
 	return unless defined $_ && $_ ne '';
 	$_ = <<"::" . $_;
-use base qw(Object::Variables);
+use base qw(Object::Variables::base);
 ::
 
 	##--------------------------------------------------------------------------
@@ -774,7 +757,7 @@ use base qw(Object::Variables);
 	##--------------------------------------------------------------------------
 	s{
 	    (?<!\\)                         ## Skip if preceded by a backslash
-	    \bobject\s+vars\b\s*            ## Look for 'field vars'
+	    \b(?:use\s+)?object\s+vars\b\s* ## Look for "[use] object vars"
 	    (?::\s*(\$\w+)\s*)?             ## "self" name into $1 if present
 	    (\(\s*(?:$arglist)?\s*\))?      ## Capture arg list into $2 if present
 	    \s*;                            ## Keep going to semicolon
@@ -785,7 +768,7 @@ use base qw(Object::Variables);
 	##--------------------------------------------------------------------------
 	## Remove the backslash from any that start with one.
 	##--------------------------------------------------------------------------
-	s{\\(?=object\s+vars\b)}{}gs;
+	s{\\(?=(?:use\s+)?object\s+vars\b)}{}gs;
 
 	##--------------------------------------------------------------------------
 	## If the $DEBUG flag is set, print the results.
@@ -811,11 +794,13 @@ sub object_vars ($$) {
 		my $vindex = $vars->{$varname};
 		for (unpack 'a1', $varname) {
 			$_ eq '$' and do {
-				lexalias($cvref, $varname, \$self->[$vindex]);
+				my $msg = lexical_alias($cvref, $varname, \$self->[$vindex]);
+				die "$filename($line): $msg\n" if $msg;
 				last;
 			};
 			/^[\@%]$/ and do {
-				lexalias($cvref, $varname, $self->[$vindex]);
+				my $msg = lexical_alias($cvref, $varname, $self->[$vindex]);
+				die "$filename($line): $msg\n" if $msg;
 				last;
 			};
 			die <<"::";
@@ -829,6 +814,21 @@ $filename($line): internal error: invalid var type '$varname'
 
 ##==============================================================================
 ## $Log: Variables.pm,v $
+## Revision 0.9  2004/07/30 01:24:45  kevin
+## Pull the 'new' method into another class in another file.
+## (This avoids an unintentional inheritance of our 'import' method.)
+##
+## Revision 0.8  2004/07/29 03:21:23  kevin
+## Use lexical_alias rather than lexalias routine.
+##
+## Revision 0.7  2004/07/29 02:13:46  kevin
+## 1. Change directive to 'use object vars'.
+## 2. Move 'new' into separate class to prevent the 'import' routine from being
+##    unexpectedly inherited.
+##
+## Revision 0.6  2004/07/27 22:10:24  kevin
+## Fix problem in generating "set_" accessors.
+##
 ## Revision 0.5  2004/07/27 01:53:14  kevin
 ## Don't wipe out $class::OBJECTVARTYPES on second import.
 ##

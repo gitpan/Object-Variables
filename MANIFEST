@@ -4,4 +4,5 @@ MANIFEST
 README
 t/Object-Variables.t
 lib/Object/Variables.pm
+lib/Object/Variables/base.pm
 META.yml                                 Module meta-data (added by MakeMaker)
