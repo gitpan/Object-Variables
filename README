@@ -1,0 +1,73 @@
+NAME
+
+    Object::Variables - variables for objects
+
+VERSION
+
+    0.2 (Bug fix alpha release)
+
+SYNOPSIS
+
+    use Object::Variables qw($scalar @array %hash);
+
+    sub new {
+        my ($class) = @_;
+        my $self = $class->SUPER::new;
+        object vars : $self;
+        $scalar = 4;
+        @array = qw(foo bar);
+    }
+
+    sub method1 {
+        my ($self, $foo, $bar) = @_;
+        object vars : $self;
+        print $array[1], "\n";
+    }
+
+DESCRIPTION
+
+    One area where Perl's object-oriented features is less than stellar
+    is its handling (or lack of handling) of instance variables. You can
+    use fields to create variables that are checked at compile time, but
+    you still have to refer to each one as something like
+    $self->{scalar}, which is especially inconvenient with arrays and
+    hashes...you might have an expression that has to be written as
+    something like
+
+        $self->{hash}{$self->{key}}[$self->{index}]
+
+    which is cumbersome, to say the least. Object::Variables lets you
+    write that as
+
+        $hash{$key}[$index]
+
+    which is certainly easier to write and to figure out later.
+
+    In addition, you can specify that automatic accessor methods are to
+    be created for some or all of the variables for the object.
+
+    This module is especially useful when combined with Sub::Declaration.
+
+INSTALLATION
+
+    To install this module type the standard incantation:
+
+        perl Makefile.PL
+        make
+        make test
+        make install
+
+DEPENDENCIES
+
+    This module requires these other modules and libraries:
+
+        Lexical::Util (at least version 0.3)
+        Tie::IxHash
+        Filter::Simple
+
+COPYRIGHT AND LICENCE
+
+    Copyright 2004 Kevin Michael Vail
+
+    This program is free software. It may be copied and/or redistributed
+    under the same terms as Perl itself.
