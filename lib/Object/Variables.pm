@@ -5,7 +5,7 @@
 ## This program is free software. It may be copied and/or redistributed under
 ## the same terms as Perl itself.
 ##==============================================================================
-## $Id: Variables.pm,v 0.4 2004/07/25 05:20:51 kevin Exp $
+## $Id: Variables.pm,v 0.5 2004/07/27 01:53:14 kevin Exp $
 ##==============================================================================
 require 5.006;
 
@@ -13,7 +13,7 @@ package ## Don't actually want this indexed yet
 	Object::Variables;
 use strict;
 use warnings;
-our ($VERSION) = q$Revision: 0.4 $ =~ /^Revision:\s+(\S+)/ or $VERSION = "0.0";
+our ($VERSION) = q$Revision: 0.5 $ =~ /^Revision:\s+(\S+)/ or $VERSION = "0.0";
 use Filter::Simple;
 use Lexical::Util qw(frame_to_cvref lexalias);
 use Tie::IxHash;
@@ -43,6 +43,8 @@ my %initializers = (
 	'@' => sub { [] },
 	'$' => sub { undef },
 );
+
+=pod
 
 =head1 NAME
 
@@ -268,7 +270,10 @@ sub new {
 
 C<< I<$reference> = Object::Variables::reference_to(I<$object>, I<$varname>); >>
 
-Returns a reference to the raw value for the specified variable. The raw value is the scalar contained in the underlying object array or hash: the scalar itself for scalar variables, or the appropriate reference for array or hash variables.
+Returns a reference to the raw value for the specified variable. The raw value
+is the scalar contained in the underlying object array or hash: the scalar
+itself for scalar variables, or the appropriate reference for array or hash
+variables.
 
 =cut
 
@@ -649,7 +654,7 @@ sub import {
 
 	$selfname = '$self' unless defined $selfname;
 
-	${"$package\::OBJECTVARTYPES"} = join '', @vartypes;
+	${"$package\::OBJECTVARTYPES"} = join '', @vartypes unless $no_new_vars;
 
 	##--------------------------------------------------------------------------
 	## Create any accessor methods that were requested.
@@ -824,8 +829,12 @@ $filename($line): internal error: invalid var type '$varname'
 
 ##==============================================================================
 ## $Log: Variables.pm,v $
+## Revision 0.5  2004/07/27 01:53:14  kevin
+## Don't wipe out $class::OBJECTVARTYPES on second import.
+##
 ## Revision 0.4  2004/07/25 05:20:51  kevin
-## Eliminate raw_value methods in favor of a single reference_to method, primarily for testing.
+## Eliminate raw_value methods in favor of a single reference_to method,
+## primarily for testing.
 ##
 ## Revision 0.3  2004/07/25 04:50:43  kevin
 ## Numerous cleanups and bug fixes. I think all known problems are now fixed.
